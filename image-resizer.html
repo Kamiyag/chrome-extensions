@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icon Resizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-4xl">
+        <h1 class="text-3xl font-bold text-center mb-6 text-gray-50">Extension Icon Resizer</h1>
+        <p class="text-center text-gray-400 mb-8">Upload an image to resize it to the standard 16x16, 48x48, and 128x128 pixel sizes for your Chrome extension.</p>
+
+        <!-- File Input and Instructions -->
+        <div class="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-600 rounded-lg mb-8">
+            <label for="icon-upload" class="cursor-pointer text-blue-400 hover:text-blue-300 transition-colors duration-200">
+                <i class="fas fa-cloud-upload-alt text-4xl mb-2"></i>
+                <div class="text-lg font-medium text-center">Click here to upload your icon (PNG, JPG)</div>
+            </label>
+            <input type="file" id="icon-upload" accept="image/png, image/jpeg" class="hidden">
+        </div>
+
+        <!-- Resized Images Display -->
+        <div id="resized-images" class="grid grid-cols-1 sm:grid-cols-3 gap-8">
+            <!-- 16x16 Image -->
+            <div class="flex flex-col items-center justify-center bg-gray-700 p-4 rounded-lg shadow-inner">
+                <h2 class="text-xl font-semibold mb-4 text-gray-200">16x16</h2>
+                <div class="bg-gray-900 p-2 rounded-lg mb-4">
+                    <img id="image-16" class="w-4 h-4 object-contain transition-transform duration-300" src="https://placehold.co/16x16/3b4252/d8dee9?text=16" alt="16x16 Icon">
+                </div>
+                <a id="download-16" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-full transition-all duration-200 hover:bg-blue-500 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed" download="icon16.png">
+                    Download
+                </a>
+            </div>
+
+            <!-- 48x48 Image -->
+            <div class="flex flex-col items-center justify-center bg-gray-700 p-4 rounded-lg shadow-inner">
+                <h2 class="text-xl font-semibold mb-4 text-gray-200">48x48</h2>
+                <div class="bg-gray-900 p-2 rounded-lg mb-4">
+                    <img id="image-48" class="w-12 h-12 object-contain transition-transform duration-300" src="https://placehold.co/48x48/3b4252/d8dee9?text=48" alt="48x48 Icon">
+                </div>
+                <a id="download-48" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-full transition-all duration-200 hover:bg-blue-500 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed" download="icon48.png">
+                    Download
+                </a>
+            </div>
+
+            <!-- 128x128 Image -->
+            <div class="flex flex-col items-center justify-center bg-gray-700 p-4 rounded-lg shadow-inner">
+                <h2 class="text-xl font-semibold mb-4 text-gray-200">128x128</h2>
+                <div class="bg-gray-900 p-2 rounded-lg mb-4">
+                    <img id="image-128" class="w-32 h-32 object-contain transition-transform duration-300" src="https://placehold.co/128x128/3b4252/d8dee9?text=128" alt="128x128 Icon">
+                </div>
+                <a id="download-128" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-full transition-all duration-200 hover:bg-blue-500 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed" download="icon128.png">
+                    Download
+                </a>
+            </div>
+        </div>
+
+        <div id="error-message" class="mt-8 text-center text-red-400 font-medium hidden"></div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const uploadInput = document.getElementById('icon-upload');
+            const errorMessage = document.getElementById('error-message');
+
+            // Get all image and download link elements
+            const images = {
+                16: document.getElementById('image-16'),
+                48: document.getElementById('image-48'),
+                128: document.getElementById('image-128')
+            };
+            const downloads = {
+                16: document.getElementById('download-16'),
+                48: document.getElementById('download-48'),
+                128: document.getElementById('download-128')
+            };
+
+            // Initial state: disable download buttons
+            Object.values(downloads).forEach(btn => btn.classList.add('disabled'));
+
+            uploadInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                // Check for file type
+                if (!file.type.startsWith('image/')) {
+                    errorMessage.textContent = 'Please upload a valid image file (PNG or JPEG).';
+                    errorMessage.classList.remove('hidden');
+                    return;
+                }
+                errorMessage.classList.add('hidden');
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        // Resizing and displaying for each required size
+                        [16, 48, 128].forEach(size => {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = size;
+                            canvas.height = size;
+                            const ctx = canvas.getContext('2d');
+                            // Draw image onto the canvas at the new size
+                            ctx.drawImage(img, 0, 0, size, size);
+
+                            // Get the data URL for the resized image
+                            const dataUrl = canvas.toDataURL('image/png');
+                            
+                            // Update the image source and download link
+                            images[size].src = dataUrl;
+                            downloads[size].href = dataUrl;
+                            downloads[size].classList.remove('disabled');
+                        });
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+    </script>
+</body>
+</html>
